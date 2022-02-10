@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "ur5_ros_klampt"
+version = "0.1.0"
+description = "MIT"
+authors = ["nekanat <nekanat.stock@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+Klampt = "^0.8.7"
+PyOpenGL = "^3.1.5"
+PyQt5 = "^5.15.6"
+numpy = "^1.21.4"
+trajectory-msgs = "^1.13.0"
+rospy = "^1.15.11"
+geometry-msgs = "^1.13.0"
+shape-msgs = "^1.13.0"
+nav-msgs = "^1.13.0"
+actionlib-msgs = "^1.13.0"
+sensor-msgs = "^1.13.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[[tool.poetry.source]]
+name = "ros"
+url = "https://rospypi.github.io/simple/"
+secondary = true

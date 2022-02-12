@@ -2,6 +2,7 @@
 from typing import List, Optional
 import os
 import time
+import numpy as np
 import rospy
 from rospkg import RosPack
 packages = RosPack()
@@ -27,7 +28,14 @@ class Planner:
         self.cspace = RobotCSpace(self.robot, self.collider)
         self.cspace.eps = 1e-2
         self.cspace.setup()
-        MotionPlan.setOptions(type="rrt", perturbationRadius=0.25, bidirectional=True)
+        MotionPlan.setOptions(type="rrt", perturbationRadius=0.25, bidirectional=True, shortcut=True)
+
+    def get_ee_link_pos(self, angles: List[float]) -> List[float]:
+        self.robot.setConfig(angles)
+        link = self.robot.link("ee_link")
+        print(self.robot.link("base_link").getWorldPosition([0, 0, 0]))
+        print(self.robot.link("wrist_1_link").getWorldPosition([0, 0, 0]))
+        return link.getWorldPosition([0, 0, 0])
 
     def solve_ik(self, target_pos: List[float]) -> Optional[List[float]]:
         link = self.robot.link("ee_link")
@@ -60,12 +68,34 @@ class Planner:
 if __name__ == "__main__":
     rospy.init_node("plan_and_move", anonymous=True)
     link_names = ["shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"]
+    active_joint_slice = slice(2, 8)
+    initial_pose = np.deg2rad([0.0, 0.0, 0.0, -60.0, 120.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    time_cnt = 0
     action_client = ActionClient("/arm_controller/", link_names)
-    planner = Planner()
-    wps = [planner.solve_ik([0.5, 0.0, 0.3]), planner.solve_ik([0.5, 0.0, 0.7])]
-    path = planner.plan(wps[0])
-    print(path)
-    for i, p in enumerate(path):
-        action_client.add_point(p[1:7], i * 3.0)
+    # Move to initial pose
+    action_client.add_point(initial_pose[active_joint_slice], 2.0 * time_cnt)
     action_client.start()
-    planner.visualize(path)
+    action_client.wait()
+    time_cnt += 1
+
+    planner = Planner()
+    cur_pos = planner.get_ee_link_pos(initial_pose)
+    target_pos = cur_pos
+    # Move to +x
+    target_pos[0] += 0.3
+    target = planner.solve_ik(target_pos)
+    path1 = planner.plan(target, initial_pose)
+    for p in path1:
+        action_client.add_point(p[active_joint_slice], 2.0 * time_cnt)
+        time_cnt += 1
+
+    # Move to +z
+    target_pos[2] += 0.2
+    prev_target = target
+    target = planner.solve_ik(target_pos)
+    path2 = planner.plan(target, prev_target)
+    for p in path2:
+        action_client.add_point(p[active_joint_slice], 2.0 * time_cnt)
+        time_cnt += 1
+    action_client.start()
+    planner.visualize(path1 + path2)

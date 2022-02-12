@@ -6,8 +6,9 @@
 xacro --inorder universal_robot/ur_description/urdf/ur5_robot.urdf.xacro use_simulation:=false -o ur5.urdf
 ```
 
-## Installation
+## Dependencies
 
+* [ur_gazebo](https://github.com/ros-industrial/universal_robot/tree/kinetic-devel/ur_gazebo)
 
 ## Run
 

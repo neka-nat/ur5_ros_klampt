@@ -33,8 +33,6 @@ class Planner:
     def get_ee_link_pos(self, angles: List[float]) -> List[float]:
         self.robot.setConfig(angles)
         link = self.robot.link("ee_link")
-        print(self.robot.link("base_link").getWorldPosition([0, 0, 0]))
-        print(self.robot.link("wrist_1_link").getWorldPosition([0, 0, 0]))
         return link.getWorldPosition([0, 0, 0])
 
     def solve_ik(self, target_pos: List[float]) -> Optional[List[float]]:
@@ -50,7 +48,7 @@ class Planner:
         if start is None:
             start = self.sim.controller(0).getCommandedConfig()
         planner.setEndpoints(start, goal)
-        planner.planMore(10)
+        planner.planMore(500)
         path = planner.getPath()
         planner.space.close()
         planner.close()
@@ -73,7 +71,7 @@ if __name__ == "__main__":
     time_cnt = 0
     action_client = ActionClient("/arm_controller/", link_names)
     # Move to initial pose
-    action_client.add_point(initial_pose[active_joint_slice], 2.0 * time_cnt)
+    action_client.add_point(initial_pose[active_joint_slice], 3.0 * time_cnt)
     action_client.start()
     action_client.wait()
     time_cnt += 1
@@ -86,16 +84,16 @@ if __name__ == "__main__":
     target = planner.solve_ik(target_pos)
     path1 = planner.plan(target, initial_pose)
     for p in path1:
-        action_client.add_point(p[active_joint_slice], 2.0 * time_cnt)
+        action_client.add_point(p[active_joint_slice], 3.0 * time_cnt)
         time_cnt += 1
 
     # Move to +z
     target_pos[2] += 0.2
     prev_target = target
     target = planner.solve_ik(target_pos)
-    path2 = planner.plan(target, prev_target)
+    path2 = planner.plan(target, prev_target)[1:]
     for p in path2:
-        action_client.add_point(p[active_joint_slice], 2.0 * time_cnt)
+        action_client.add_point(p[active_joint_slice], 3.0 * time_cnt)
         time_cnt += 1
     action_client.start()
     planner.visualize(path1 + path2)

@@ -23,3 +23,5 @@ Run klampt planner.
 ```sh
 rosrun ur5_ros_klampt plan_and_move.py
 ```
+
+![demo](ur5_klampt_demo.gif)
